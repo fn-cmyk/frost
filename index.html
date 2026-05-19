@@ -1,26 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>GEM フロストリポップ管理</title>
 
   <style>
 
     body {
+
       margin: 0;
+
       padding: 20px;
+
       background: #1e1e1e;
+
       color: white;
+
       font-family: sans-serif;
     }
 
     h1 {
+
       text-align: center;
+
       margin-bottom: 20px;
     }
 
-    /* ===== チャンネル横並び ===== */
+    /* ===== チャンネル ===== */
 
     .channels {
 
@@ -82,18 +95,22 @@
     }
 
     .kill-btn {
+
       background: #4caf50;
     }
 
     .edit-btn {
+
       background: #ff9800;
     }
 
     .minus-btn {
+
       background: #607d8b;
     }
 
     button:hover {
+
       opacity: 0.9;
     }
 
@@ -168,25 +185,92 @@
     }
 
   </style>
+
 </head>
+
 <body>
 
   <h1>フロストリポップ管理</h1>
 
   <!-- ===== ch一覧 ===== -->
 
-  <div class="channels" id="channels"></div>
+  <div
+    class="channels"
+    id="channels"
+  ></div>
 
   <!-- ===== マップ ===== -->
 
   <div class="map-area">
 
-    <!-- 同じフォルダに map.png を置く -->
-    <img src="map.png" alt="マップ">
+    <!-- map.png を同じフォルダへ -->
+
+    <img
+      src="map.png"
+      alt="マップ"
+    >
 
   </div>
 
-  <script>
+  <!-- ===== Firebase ===== -->
+
+  <script type="module">
+
+    import { initializeApp }
+
+      from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+
+      getFirestore,
+
+      doc,
+
+      setDoc,
+
+      getDoc,
+
+      onSnapshot
+
+    }
+
+      from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ===== Firebase設定 =====
+
+    const firebaseConfig = {
+
+      apiKey:
+        "AIzaSyAhY08YQBHf-J1ra5R6YTvQwgHWswOOQbs",
+
+      authDomain:
+        "gem-frost.firebaseapp.com",
+
+      databaseURL:
+        "https://gem-frost-default-rtdb.firebaseio.com",
+
+      projectId:
+        "gem-frost",
+
+      storageBucket:
+        "gem-frost.firebasestorage.app",
+
+      messagingSenderId:
+        "471453337459",
+
+      appId:
+        "1:471453337459:web:d7b793a007cc5ca1292706"
+    };
+
+    const app =
+      initializeApp(firebaseConfig);
+
+    const db =
+      getFirestore(app);
+
+    // ===== =====
 
     const channelCount = 5;
 
@@ -195,14 +279,22 @@
     const initialTimes = {
 
       1: "2026-05-19T16:26",
+
       2: "2026-05-19T16:15",
+
       3: "2026-05-19T16:11",
+
       4: "2026-05-19T16:20",
+
       5: "2026-05-19T16:28"
     };
 
     const container =
       document.getElementById("channels");
+
+    // Firebase同期データ
+
+    const channelData = {};
 
     // ===== ch生成 =====
 
@@ -210,19 +302,11 @@
 
       for (let i = 1; i <= channelCount; i++) {
 
-        // 初回だけ保存
+        const div =
+          document.createElement("div");
 
-        if (!localStorage.getItem(`ch${i}`)) {
-
-          localStorage.setItem(
-            `ch${i}`,
-            initialTimes[i]
-          );
-        }
-
-        const div = document.createElement("div");
-
-        div.className = "channel";
+        div.className =
+          "channel";
 
         div.innerHTML = `
 
@@ -230,29 +314,45 @@
 
           <div class="buttons">
 
-            <button class="kill-btn"
-              onclick="registerKill(${i})">
+            <button
+
+              class="kill-btn"
+
+              onclick="registerKill(${i})"
+            >
 
               討伐登録
 
             </button>
 
-            <button class="edit-btn"
-              onclick="editTime(${i})">
+            <button
+
+              class="edit-btn"
+
+              onclick="editTime(${i})"
+            >
 
               修正
 
             </button>
 
-            <button class="minus-btn"
-              onclick="minusMinute(${i}, 1)">
+            <button
+
+              class="minus-btn"
+
+              onclick="minusMinute(${i}, 1)"
+            >
 
               -1分
 
             </button>
 
-            <button class="minus-btn"
-              onclick="minusMinute(${i}, 10)">
+            <button
+
+              class="minus-btn"
+
+              onclick="minusMinute(${i}, 10)"
+            >
 
               -10分
 
@@ -260,9 +360,13 @@
 
           </div>
 
-          <div class="time"
-            id="time${i}">
-          </div>
+          <div
+
+            class="time"
+
+            id="time${i}"
+
+          ></div>
         `;
 
         container.appendChild(div);
@@ -271,116 +375,240 @@
       updateAll();
     }
 
+    // ===== 初期データ =====
+
+    async function setupInitialData() {
+
+      for (
+        let i = 1;
+        i <= channelCount;
+        i++
+      ) {
+
+        const ref =
+
+          doc(
+            db,
+            "boss",
+            `ch${i}`
+          );
+
+        const snap =
+          await getDoc(ref);
+
+        // データ未作成時
+
+        if (!snap.exists()) {
+
+          await setDoc(ref, {
+
+            time:
+              initialTimes[i]
+          });
+        }
+      }
+    }
+
+    // ===== リアルタイム同期 =====
+
+    function setupRealtime() {
+
+      for (
+        let i = 1;
+        i <= channelCount;
+        i++
+      ) {
+
+        const ref =
+
+          doc(
+            db,
+            "boss",
+            `ch${i}`
+          );
+
+        onSnapshot(ref, (snap) => {
+
+          if (!snap.exists())
+            return;
+
+          channelData[i] =
+
+            snap.data().time;
+
+          updateAll();
+        });
+      }
+    }
+
     // ===== 討伐登録 =====
 
-    function registerKill(ch) {
+    window.registerKill =
+      async function(ch) {
 
-      const now = new Date();
+        const now =
+          new Date();
 
-      localStorage.setItem(
-        `ch${ch}`,
-        now.toISOString()
-      );
+        await setDoc(
 
-      updateAll();
-    }
+          doc(
+            db,
+            "boss",
+            `ch${ch}`
+          ),
+
+          {
+
+            time:
+              now.toISOString()
+          }
+        );
+      }
 
     // ===== 修正 =====
 
-    function editTime(ch) {
+    window.editTime =
+      async function(ch) {
 
-      const current =
-        localStorage.getItem(`ch${ch}`);
+        const current =
+          channelData[ch];
 
-      const currentDate =
-        new Date(current);
+        const currentDate =
+          new Date(current);
 
-      const defaultValue =
+        const defaultValue =
 
-        `${currentDate.getFullYear()}-` +
+          `${currentDate.getFullYear()}-`
 
-        `${String(
-          currentDate.getMonth() + 1
-        ).padStart(2, '0')}-` +
+          +
 
-        `${String(
-          currentDate.getDate()
-        ).padStart(2, '0')}T` +
+          `${String(
 
-        `${String(
-          currentDate.getHours()
-        ).padStart(2, '0')}:` +
+            currentDate.getMonth() + 1
 
-        `${String(
-          currentDate.getMinutes()
-        ).padStart(2, '0')}`;
+          ).padStart(2, '0')}-`
 
-      const input = prompt(
+          +
 
-        "討伐時間を入力\n例: 2026-05-19T16:26",
+          `${String(
 
-        defaultValue
-      );
+            currentDate.getDate()
 
-      if (!input) return;
+          ).padStart(2, '0')}T`
 
-      localStorage.setItem(
-        `ch${ch}`,
-        input
-      );
+          +
 
-      updateAll();
-    }
+          `${String(
+
+            currentDate.getHours()
+
+          ).padStart(2, '0')}:`
+
+          +
+
+          `${String(
+
+            currentDate.getMinutes()
+
+          ).padStart(2, '0')}`;
+
+        const input = prompt(
+
+          "討伐時間を入力",
+
+          defaultValue
+        );
+
+        if (!input)
+          return;
+
+        await setDoc(
+
+          doc(
+            db,
+            "boss",
+            `ch${ch}`
+          ),
+
+          {
+
+            time:
+              input
+          }
+        );
+      }
 
     // ===== 分戻す =====
 
-    function minusMinute(ch, min) {
+    window.minusMinute =
+      async function(ch, min) {
 
-      const current =
-        localStorage.getItem(`ch${ch}`);
+        const current =
+          channelData[ch];
 
-      const date = new Date(current);
+        const date =
+          new Date(current);
 
-      date.setMinutes(
-        date.getMinutes() - min
-      );
+        date.setMinutes(
 
-      localStorage.setItem(
-        `ch${ch}`,
-        date.toISOString()
-      );
+          date.getMinutes() - min
+        );
 
-      updateAll();
-    }
+        await setDoc(
+
+          doc(
+            db,
+            "boss",
+            `ch${ch}`
+          ),
+
+          {
+
+            time:
+              date.toISOString()
+          }
+        );
+      }
 
     // ===== 更新 =====
 
     function updateAll() {
 
-      for (let i = 1; i <= channelCount; i++) {
+      for (
+        let i = 1;
+        i <= channelCount;
+        i++
+      ) {
 
         const saved =
-          localStorage.getItem(`ch${i}`);
+          channelData[i];
 
-        if (!saved) continue;
+        if (!saved)
+          continue;
 
         const killTime =
           new Date(saved);
 
         // 6時間後
 
-        const next = new Date(
+        const next =
+          new Date(
 
-          killTime.getTime()
+            killTime.getTime()
 
-          + 6 * 60 * 60 * 1000
-        );
+            +
 
-        const now = new Date();
+            6 * 60 * 60 * 1000
+          );
 
-        const remainMs = next - now;
+        const now =
+          new Date();
 
-        let remainText = "";
+        const remainMs =
+          next - now;
+
+        let remainText =
+          "";
 
         // 10分前
 
@@ -388,57 +616,101 @@
           10 * 60 * 1000;
 
         if (
-          remainMs > 0 &&
+
+          remainMs > 0
+
+          &&
+
           remainMs <= tenMin
         ) {
 
           remainText =
+
             `<span class="spawned">
+
               まもなく出現！
+
             </span>`;
         }
 
-        else if (remainMs <= 0) {
+        else if (
+          remainMs <= 0
+        ) {
 
           remainText =
+
             `<span class="spawned">
+
               出現中！
+
             </span>`;
         }
 
         else {
 
-          const h = Math.floor(
+          const h =
+            Math.floor(
 
-            remainMs
-            / (1000 * 60 * 60)
-          );
-
-          const m = Math.floor(
-
-            (
               remainMs
-              % (1000 * 60 * 60)
-            )
 
-            / (1000 * 60)
-          );
+              /
 
-          const s = Math.floor(
+              (1000 * 60 * 60)
+            );
 
-            (
-              remainMs
-              % (1000 * 60)
-            )
+          const m =
+            Math.floor(
 
-            / 1000
-          );
+              (
+
+                remainMs
+
+                %
+
+                (
+                  1000
+                  * 60
+                  * 60
+                )
+
+              )
+
+              /
+
+              (
+                1000
+                * 60
+              )
+            );
+
+          const s =
+            Math.floor(
+
+              (
+
+                remainMs
+
+                %
+
+                (
+                  1000
+                  * 60
+                )
+
+              )
+
+              /
+
+              1000
+            );
 
           remainText =
 
             `<span class="remain">
 
-              あと ${h}時間
+              あと
+
+              ${h}時間
 
               ${m}分
 
@@ -448,10 +720,13 @@
         }
 
         document.getElementById(
+
           `time${i}`
+
         ).innerHTML = `
 
           討伐:
+
           ${formatDate(killTime)}
 
           <br>
@@ -459,6 +734,7 @@
           <span class="next">
 
             次回:
+
             ${formatDate(next)}
 
           </span>
@@ -477,29 +753,39 @@
       const month =
 
         String(
+
           date.getMonth() + 1
+
         ).padStart(2, '0');
 
       const day =
 
         String(
+
           date.getDate()
+
         ).padStart(2, '0');
 
       const hours =
 
         String(
+
           date.getHours()
+
         ).padStart(2, '0');
 
       const minutes =
 
         String(
+
           date.getMinutes()
+
         ).padStart(2, '0');
 
       return `
+
         ${month}/${day}
+
         ${hours}:${minutes}
       `;
     }
@@ -508,9 +794,16 @@
 
     createChannels();
 
-    // 1秒更新
+    await setupInitialData();
 
-    setInterval(updateAll, 1000);
+    setupRealtime();
+
+    // 秒数更新
+
+    setInterval(
+      updateAll,
+      1000
+    );
 
   </script>
 
