@@ -30,7 +30,42 @@
 
       text-align: center;
 
+      margin-bottom: 10px;
+    }
+
+    /* ===== ボタン ===== */
+
+    .top-buttons {
+
+      display: flex;
+
+      justify-content: center;
+
+      gap: 10px;
+
       margin-bottom: 20px;
+    }
+
+    .top-buttons button {
+
+      background: #3f51b5;
+
+      border: none;
+
+      color: white;
+
+      padding: 10px 16px;
+
+      border-radius: 10px;
+
+      cursor: pointer;
+
+      font-size: 14px;
+    }
+
+    .top-buttons button:hover {
+
+      opacity: 0.9;
     }
 
     /* ===== チャンネル ===== */
@@ -63,7 +98,7 @@
 
       text-align: center;
 
-      font-size: 20px;
+      font-size: 24px;
     }
 
     .buttons {
@@ -192,6 +227,18 @@
 
   <h1>フロストリポップ管理</h1>
 
+  <!-- ===== 上部ボタン ===== -->
+
+  <div class="top-buttons">
+
+    <button onclick="toggleSort()">
+
+      リポップ順ソート
+
+    </button>
+
+  </div>
+
   <!-- ===== ch一覧 ===== -->
 
   <div
@@ -202,8 +249,6 @@
   <!-- ===== マップ ===== -->
 
   <div class="map-area">
-
-    <!-- map.png を同じフォルダへ -->
 
     <img
       src="map.png"
@@ -243,25 +288,22 @@
     const firebaseConfig = {
 
       apiKey:
-        "AIzaSyAhY08YQBHf-J1ra5R6YTvQwgHWswOOQbs",
+        "YOUR_API_KEY",
 
       authDomain:
-        "gem-frost.firebaseapp.com",
-
-      databaseURL:
-        "https://gem-frost-default-rtdb.firebaseio.com",
+        "YOUR_AUTH_DOMAIN",
 
       projectId:
-        "gem-frost",
+        "YOUR_PROJECT_ID",
 
       storageBucket:
-        "gem-frost.firebasestorage.app",
+        "YOUR_STORAGE_BUCKET",
 
       messagingSenderId:
-        "471453337459",
+        "YOUR_MESSAGING_SENDER_ID",
 
       appId:
-        "1:471453337459:web:d7b793a007cc5ca1292706"
+        "YOUR_APP_ID"
     };
 
     const app =
@@ -274,7 +316,7 @@
 
     const channelCount = 5;
 
-    // 初期討伐時間
+    let sortMode = false;
 
     const initialTimes = {
 
@@ -292,85 +334,13 @@
     const container =
       document.getElementById("channels");
 
-    // Firebase同期データ
-
     const channelData = {};
 
-    // ===== ch生成 =====
+    // ===== ソート切替 =====
 
-    function createChannels() {
+    window.toggleSort = function() {
 
-      for (let i = 1; i <= channelCount; i++) {
-
-        const div =
-          document.createElement("div");
-
-        div.className =
-          "channel";
-
-        div.innerHTML = `
-
-          <h2>${i}ch</h2>
-
-          <div class="buttons">
-
-            <button
-
-              class="kill-btn"
-
-              onclick="registerKill(${i})"
-            >
-
-              討伐登録
-
-            </button>
-
-            <button
-
-              class="edit-btn"
-
-              onclick="editTime(${i})"
-            >
-
-              修正
-
-            </button>
-
-            <button
-
-              class="minus-btn"
-
-              onclick="minusMinute(${i}, 1)"
-            >
-
-              -1分
-
-            </button>
-
-            <button
-
-              class="minus-btn"
-
-              onclick="minusMinute(${i}, 10)"
-            >
-
-              -10分
-
-            </button>
-
-          </div>
-
-          <div
-
-            class="time"
-
-            id="time${i}"
-
-          ></div>
-        `;
-
-        container.appendChild(div);
-      }
+      sortMode = !sortMode;
 
       updateAll();
     }
@@ -395,8 +365,6 @@
 
         const snap =
           await getDoc(ref);
-
-        // データ未作成時
 
         if (!snap.exists()) {
 
@@ -574,6 +542,8 @@
 
     function updateAll() {
 
+      let list = [];
+
       for (
         let i = 1;
         i <= channelCount;
@@ -588,8 +558,6 @@
 
         const killTime =
           new Date(saved);
-
-        // 6時間後
 
         const next =
           new Date(
@@ -607,21 +575,48 @@
         const remainMs =
           next - now;
 
+        list.push({
+
+          ch: i,
+
+          killTime,
+
+          next,
+
+          remainMs
+        });
+      }
+
+      // ===== ソート =====
+
+      if (sortMode) {
+
+        list.sort(
+
+          (a, b) =>
+            a.remainMs - b.remainMs
+        );
+      }
+
+      // ===== 描画 =====
+
+      container.innerHTML = "";
+
+      for (const item of list) {
+
         let remainText =
           "";
-
-        // 10分前
 
         const tenMin =
           10 * 60 * 1000;
 
         if (
 
-          remainMs > 0
+          item.remainMs > 0
 
           &&
 
-          remainMs <= tenMin
+          item.remainMs <= tenMin
         ) {
 
           remainText =
@@ -634,7 +629,7 @@
         }
 
         else if (
-          remainMs <= 0
+          item.remainMs <= 0
         ) {
 
           remainText =
@@ -651,7 +646,7 @@
           const h =
             Math.floor(
 
-              remainMs
+              item.remainMs
 
               /
 
@@ -663,7 +658,7 @@
 
               (
 
-                remainMs
+                item.remainMs
 
                 %
 
@@ -688,7 +683,7 @@
 
               (
 
-                remainMs
+                item.remainMs
 
                 %
 
@@ -719,30 +714,88 @@
             </span>`;
         }
 
-        document.getElementById(
+        const div =
+          document.createElement("div");
 
-          `time${i}`
+        div.className =
+          "channel";
 
-        ).innerHTML = `
+        div.innerHTML = `
 
-          討伐:
+          <h2>${item.ch}</h2>
 
-          ${formatDate(killTime)}
+          <div class="buttons">
 
-          <br>
+            <button
 
-          <span class="next">
+              class="kill-btn"
 
-            次回:
+              onclick="registerKill(${item.ch})"
+            >
 
-            ${formatDate(next)}
+              討伐登録
 
-          </span>
+            </button>
 
-          <br>
+            <button
 
-          ${remainText}
+              class="edit-btn"
+
+              onclick="editTime(${item.ch})"
+            >
+
+              修正
+
+            </button>
+
+            <button
+
+              class="minus-btn"
+
+              onclick="minusMinute(${item.ch}, 1)"
+            >
+
+              -1分
+
+            </button>
+
+            <button
+
+              class="minus-btn"
+
+              onclick="minusMinute(${item.ch}, 10)"
+            >
+
+              -10分
+
+            </button>
+
+          </div>
+
+          <div class="time">
+
+            討伐:
+
+            ${formatDate(item.killTime)}
+
+            <br>
+
+            <span class="next">
+
+              次回:
+
+              ${formatDate(item.next)}
+
+            </span>
+
+            <br>
+
+            ${remainText}
+
+          </div>
         `;
+
+        container.appendChild(div);
       }
     }
 
@@ -792,13 +845,9 @@
 
     // ===== 初期化 =====
 
-    createChannels();
-
     await setupInitialData();
 
     setupRealtime();
-
-    // 秒数更新
 
     setInterval(
       updateAll,
