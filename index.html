@@ -233,7 +233,7 @@
 
     <button onclick="toggleSort()">
 
-      リポップ順ソート
+      次に湧く順
 
     </button>
 
@@ -364,23 +364,25 @@ function createChannels() {
 
   // ソート時のみ並び替え
 
-  if (sortMode) {
+if (sortMode) {
 
-    list.sort((a, b) => {
+  list.sort((a, b) => {
 
-      const aTime =
-        channelData[a]
-        ? new Date(channelData[a]).getTime()
-        : 0;
+    const aNext =
+      channelData[a]
+      ? new Date(channelData[a]).getTime()
+        + (6 * 60 * 60 * 1000)
+      : Infinity;
 
-      const bTime =
-        channelData[b]
-        ? new Date(channelData[b]).getTime()
-        : 0;
+    const bNext =
+      channelData[b]
+      ? new Date(channelData[b]).getTime()
+        + (6 * 60 * 60 * 1000)
+      : Infinity;
 
-      return aTime - bTime;
-    });
-  }
+    return aNext - bNext;
+  });
+}
 
   for (const ch of list) {
 
