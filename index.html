@@ -33,7 +33,7 @@
       margin-bottom: 10px;
     }
 
-    /* ===== ボタン ===== */
+    /* ===== 上部ボタン ===== */
 
     .top-buttons {
 
@@ -345,6 +345,146 @@
       updateAll();
     }
 
+    // ===== ch生成 =====
+
+    function createChannels() {
+
+      container.innerHTML = "";
+
+      let list = [];
+
+      for (
+        let i = 1;
+        i <= channelCount;
+        i++
+      ) {
+
+        const saved =
+          channelData[i];
+
+        if (!saved)
+          continue;
+
+        const killTime =
+          new Date(saved);
+
+        const next =
+          new Date(
+
+            killTime.getTime()
+
+            +
+
+            6 * 60 * 60 * 1000
+          );
+
+        const now =
+          new Date();
+
+        const remainMs =
+          next - now;
+
+        list.push({
+
+          ch: i,
+
+          killTime,
+
+          next,
+
+          remainMs
+        });
+      }
+
+      // ===== ソート =====
+
+      if (sortMode) {
+
+        list.sort(
+
+          (a, b) =>
+            a.remainMs - b.remainMs
+        );
+      }
+
+      // ===== 描画 =====
+
+      for (const item of list) {
+
+        const div =
+          document.createElement("div");
+
+        div.className =
+          "channel";
+
+        div.id =
+          `channel${item.ch}`;
+
+        div.innerHTML = `
+
+          <h2>${item.ch}</h2>
+
+          <div class="buttons">
+
+            <button
+
+              class="kill-btn"
+
+              onclick="registerKill(${item.ch})"
+            >
+
+              討伐登録
+
+            </button>
+
+            <button
+
+              class="edit-btn"
+
+              onclick="editTime(${item.ch})"
+            >
+
+              修正
+
+            </button>
+
+            <button
+
+              class="minus-btn"
+
+              onclick="minusMinute(${item.ch}, 1)"
+            >
+
+              -1分
+
+            </button>
+
+            <button
+
+              class="minus-btn"
+
+              onclick="minusMinute(${item.ch}, 10)"
+            >
+
+              -10分
+
+            </button>
+
+          </div>
+
+          <div
+
+            class="time"
+
+            id="time${item.ch}"
+
+          ></div>
+        `;
+
+        container.appendChild(div);
+      }
+    }
+
     // ===== 初期データ =====
 
     async function setupInitialData() {
@@ -403,6 +543,8 @@
           channelData[i] =
 
             snap.data().time;
+
+          createChannels();
 
           updateAll();
         });
@@ -542,8 +684,6 @@
 
     function updateAll() {
 
-      let list = [];
-
       for (
         let i = 1;
         i <= channelCount;
@@ -575,35 +715,6 @@
         const remainMs =
           next - now;
 
-        list.push({
-
-          ch: i,
-
-          killTime,
-
-          next,
-
-          remainMs
-        });
-      }
-
-      // ===== ソート =====
-
-      if (sortMode) {
-
-        list.sort(
-
-          (a, b) =>
-            a.remainMs - b.remainMs
-        );
-      }
-
-      // ===== 描画 =====
-
-      container.innerHTML = "";
-
-      for (const item of list) {
-
         let remainText =
           "";
 
@@ -612,11 +723,11 @@
 
         if (
 
-          item.remainMs > 0
+          remainMs > 0
 
           &&
 
-          item.remainMs <= tenMin
+          remainMs <= tenMin
         ) {
 
           remainText =
@@ -629,7 +740,7 @@
         }
 
         else if (
-          item.remainMs <= 0
+          remainMs <= 0
         ) {
 
           remainText =
@@ -646,7 +757,7 @@
           const h =
             Math.floor(
 
-              item.remainMs
+              remainMs
 
               /
 
@@ -658,7 +769,7 @@
 
               (
 
-                item.remainMs
+                remainMs
 
                 %
 
@@ -683,7 +794,7 @@
 
               (
 
-                item.remainMs
+                remainMs
 
                 %
 
@@ -714,88 +825,34 @@
             </span>`;
         }
 
-        const div =
-          document.createElement("div");
+        const timeDiv =
+          document.getElementById(
+            `time${i}`
+          );
 
-        div.className =
-          "channel";
+        if (!timeDiv)
+          continue;
 
-        div.innerHTML = `
+        timeDiv.innerHTML = `
 
-          <h2>${item.ch}</h2>
+          討伐:
 
-          <div class="buttons">
+          ${formatDate(killTime)}
 
-            <button
+          <br>
 
-              class="kill-btn"
+          <span class="next">
 
-              onclick="registerKill(${item.ch})"
-            >
+            次回:
 
-              討伐登録
+            ${formatDate(next)}
 
-            </button>
+          </span>
 
-            <button
+          <br>
 
-              class="edit-btn"
-
-              onclick="editTime(${item.ch})"
-            >
-
-              修正
-
-            </button>
-
-            <button
-
-              class="minus-btn"
-
-              onclick="minusMinute(${item.ch}, 1)"
-            >
-
-              -1分
-
-            </button>
-
-            <button
-
-              class="minus-btn"
-
-              onclick="minusMinute(${item.ch}, 10)"
-            >
-
-              -10分
-
-            </button>
-
-          </div>
-
-          <div class="time">
-
-            討伐:
-
-            ${formatDate(item.killTime)}
-
-            <br>
-
-            <span class="next">
-
-              次回:
-
-              ${formatDate(item.next)}
-
-            </span>
-
-            <br>
-
-            ${remainText}
-
-          </div>
+          ${remainText}
         `;
-
-        container.appendChild(div);
       }
     }
 
@@ -847,7 +904,14 @@
 
     await setupInitialData();
 
+    createChannels();
+
     setupRealtime();
+
+    setInterval(
+      updateAll,
+      1000
+    );
 
   </script>
 
