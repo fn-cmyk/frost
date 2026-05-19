@@ -347,143 +347,117 @@
 
     // ===== ch生成 =====
 
-    function createChannels() {
+function createChannels() {
 
-      container.innerHTML = "";
+  container.innerHTML = "";
 
-      let list = [];
+  let list = [];
 
-      for (
-        let i = 1;
-        i <= channelCount;
-        i++
-      ) {
+  for (
+    let i = 1;
+    i <= channelCount;
+    i++
+  ) {
 
-        const saved =
-          channelData[i];
+    list.push(i);
+  }
 
-        if (!saved)
-          continue;
+  // ソート時のみ並び替え
 
-        const killTime =
-          new Date(saved);
+  if (sortMode) {
 
-        const next =
-          new Date(
+    list.sort((a, b) => {
 
-            killTime.getTime()
+      const aTime =
+        channelData[a]
+        ? new Date(channelData[a]).getTime()
+        : 0;
 
-            +
+      const bTime =
+        channelData[b]
+        ? new Date(channelData[b]).getTime()
+        : 0;
 
-            6 * 60 * 60 * 1000
-          );
+      return aTime - bTime;
+    });
+  }
 
-        const now =
-          new Date();
+  for (const ch of list) {
 
-        const remainMs =
-          next - now;
+    const div =
+      document.createElement("div");
 
-        list.push({
+    div.className =
+      "channel";
 
-          ch: i,
+    div.innerHTML = `
 
-          killTime,
+      <h2>${ch}</h2>
 
-          next,
+      <div class="buttons">
 
-          remainMs
-        });
-      }
+        <button
 
-      // ===== ソート =====
+          class="kill-btn"
 
-      if (sortMode) {
+          onclick="registerKill(${ch})"
+        >
 
-        list.sort(
+          討伐登録
 
-          (a, b) =>
-            a.remainMs - b.remainMs
-        );
-      }
+        </button>
 
-      // ===== 描画 =====
+        <button
 
-      for (const item of list) {
+          class="edit-btn"
 
-        const div =
-          document.createElement("div");
+          onclick="editTime(${ch})"
+        >
 
-        div.className =
-          "channel";
+          修正
 
-        div.id =
-          `channel${item.ch}`;
+        </button>
 
-        div.innerHTML = `
+        <button
 
-          <h2>${item.ch}</h2>
+          class="minus-btn"
 
-          <div class="buttons">
+          onclick="minusMinute(${ch}, 1)"
+        >
 
-            <button
+          -1分
 
-              class="kill-btn"
+        </button>
 
-              onclick="registerKill(${item.ch})"
-            >
+        <button
 
-              討伐登録
+          class="minus-btn"
 
-            </button>
+          onclick="minusMinute(${ch}, 10)"
+        >
 
-            <button
+          -10分
 
-              class="edit-btn"
+        </button>
 
-              onclick="editTime(${item.ch})"
-            >
+      </div>
 
-              修正
+      <div
 
-            </button>
+        class="time"
 
-            <button
+        id="time${ch}"
 
-              class="minus-btn"
+      >
 
-              onclick="minusMinute(${item.ch}, 1)"
-            >
+        読み込み中...
 
-              -1分
+      </div>
+    `;
 
-            </button>
-
-            <button
-
-              class="minus-btn"
-
-              onclick="minusMinute(${item.ch}, 10)"
-            >
-
-              -10分
-
-            </button>
-
-          </div>
-
-          <div
-
-            class="time"
-
-            id="time${item.ch}"
-
-          ></div>
-        `;
-
-        container.appendChild(div);
-      }
-    }
+    container.appendChild(div);
+  }
+}
 
     // ===== 初期データ =====
 
