@@ -218,6 +218,150 @@
         grid-template-columns: 1fr;
       }
     }
+    
+.map-area {
+
+  position: relative;
+
+  width: fit-content;
+
+  margin: 0 auto;
+}
+
+.spot {
+
+  position: absolute;
+
+  width: clamp(28px, 4vw, 42px);
+
+  height: clamp(28px, 4vw, 42px);
+  
+  border: 2px solid #FFFFFF;
+
+  border-radius: 50%;
+
+  font-size: clamp(12px, 2vw, 18px);
+  
+  font-family: "メイリオ" ;
+  
+  font-weight: bold;
+  
+  display: flex;
+  
+  justify-content: center;
+  
+  align-items: center;
+  
+  box-sizing: border-box;
+  
+  transform: translate(-50%, -50%);
+
+}
+
+/* 座標 */
+
+.s1 {
+  top: 46%;
+  left: 24%;
+  background: #EA3829;
+}
+
+.s2 {
+  top: 36%;
+  left: 31%;
+  background: #F69500;
+}
+.s3 {
+  top: 52%;
+  left: 30%;
+  background: #EF5A98;
+}
+.s4 {
+  top: 46%;
+  left: 40%;
+  background: #AAD816;
+}
+.s5 {
+  top: 58%;
+  left: 40%;
+  background: #27BB36;
+}
+.s6 {
+  top: 46%;
+  left: 49%;
+  background: #7AB8F8;
+}
+.s7 {
+  top: 38%;
+  left: 58%;
+  background: #686DF4;
+}
+
+.s8 {
+  top: 50%;
+  left: 58%;
+  background: #0890BD;
+}
+.s9 {
+  top: 44%;
+  left: 67%;
+  background: #CD3ACE;
+}
+
+.s10 {
+  top: 60%;
+  left: 66%;
+  background: #A1C38C;
+}
+.s11 {
+  top: 51%;
+  left: 73%;
+  background: #9A96BB;
+}
+
+.spot.checked {
+
+  filter: brightness(0.4);
+
+  opacity: 0.5;
+}
+
+.spot.found {
+
+  animation: blink 1s infinite;
+
+  border-color: white;
+}
+
+@keyframes blink {
+
+  0% {
+
+    transform: scale(1);
+
+    filter: brightness(1);
+    
+    transform: translate(-50%, -50%);
+  }
+
+  50% {
+
+    transform: scale(1.15);
+
+    filter: brightness(1.8);
+    
+    transform: translate(-50%, -50%);
+  }
+
+  100% {
+
+    transform: scale(1);
+
+    filter: brightness(1);
+    
+    transform: translate(-50%, -50%);
+  }
+}
 
   </style>
 
@@ -254,6 +398,50 @@
       src="map.png"
       alt="マップ"
     >
+    
+  <button class="spot s1" onclick="toggleSpot(1)">
+    1
+  </button>
+
+  <button class="spot s2" onclick="toggleSpot(2)">
+    2
+  </button>
+  
+  <button class="spot s3" onclick="toggleSpot(3)">
+    3
+  </button>
+
+  <button class="spot s4" onclick="toggleSpot(4)">
+    4
+  </button>
+  
+  <button class="spot s5" onclick="toggleSpot(5)">
+    5
+  </button>
+
+  <button class="spot s6" onclick="toggleSpot(6)">
+    6
+  </button>
+  
+  <button class="spot s7" onclick="toggleSpot(7)">
+    7
+  </button>
+
+  <button class="spot s8" onclick="toggleSpot(8)">
+    8
+  </button>
+  
+  <button class="spot s9" onclick="toggleSpot(9)">
+    9
+  </button>
+
+  <button class="spot s10" onclick="toggleSpot(10)">
+    10
+  </button>
+  
+  <button class="spot s11" onclick="toggleSpot(11)">
+    11
+  </button>
 
   </div>
 
@@ -335,6 +523,8 @@
       document.getElementById("channels");
 
     const channelData = {};
+    
+    const spotStates = {};
 
     // ===== ソート切替 =====
 
@@ -527,6 +717,28 @@ if (sortMode) {
           updateAll();
         });
       }
+      
+const spotRef =
+
+  doc(
+    db,
+    "spots",
+    "current"
+  );
+
+onSnapshot(spotRef, (snap) => {
+
+  if (!snap.exists())
+    return;
+
+  Object.assign(
+    spotStates,
+    snap.data()
+  );
+
+  updateSpots();
+});
+
     }
 
     // ===== 討伐登録 =====
@@ -551,7 +763,36 @@ if (sortMode) {
               now.toISOString()
           }
         );
+        
+        resetSpots();
+        
       }
+      
+// 発見未発見リセット
+async function resetSpots() {
+
+  const resetData = {};
+
+  for (
+    let i = 1;
+    i <= 11;
+    i++
+  ) {
+
+    resetData[i] = "none";
+  }
+
+  await setDoc(
+
+    doc(
+      db,
+      "spots",
+      "current"
+    ),
+
+    resetData
+  );
+}
 
     // ===== 修正 =====
 
@@ -877,6 +1118,110 @@ if (sortMode) {
         ${hours}:${minutes}
       `;
     }
+    
+// 発見未発見トグルボタン
+window.toggleSpot =
+  async function(num) {
+
+    const current =
+      spotStates[num] || "none";
+
+    let next = "none";
+
+    // 未探索 → 探索済み
+
+    if (current === "none") {
+
+      next = "checked";
+    }
+
+    // 探索済み → 発見
+
+    else if (
+      current === "checked"
+    ) {
+
+      next = "found";
+    }
+
+    // 発見 → 未探索
+
+    else {
+
+      next = "none";
+    }
+
+    // Firebase保存
+
+    await setDoc(
+
+      doc(
+        db,
+        "spots",
+        "current"
+      ),
+
+      {
+
+        [num]: next
+      },
+
+      {
+
+        merge: true
+      }
+    );
+}
+
+function updateSpots() {
+
+  for (
+    let i = 1;
+    i <= 11;
+    i++
+  ) {
+
+    const spot =
+
+      document.querySelector(
+        `.s${i}`
+      );
+
+    if (!spot)
+      continue;
+
+    // 一旦全部消す
+
+    spot.classList.remove(
+      "checked"
+    );
+
+    spot.classList.remove(
+      "found"
+    );
+
+    const state =
+      spotStates[i];
+
+    // 状態付与
+
+    if (state === "checked") {
+
+      spot.classList.add(
+        "checked"
+      );
+    }
+
+    else if (
+      state === "found"
+    ) {
+
+      spot.classList.add(
+        "found"
+      );
+    }
+  }
+}
 
     // ===== 初期化 =====
 
