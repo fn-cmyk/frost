@@ -937,112 +937,104 @@ async function resetSpots() {
         let remainText =
           "";
 
-        const tenMin =
-          10 * 60 * 1000;
+if (
+  remainMs <= 0
+) {
 
-        if (
+  remainText =
 
-          remainMs > 0
+    `<span class="spawned">
 
-          &&
+      出現中！
 
-          remainMs <= tenMin
-        ) {
+    </span>`;
+}
 
-          remainText =
+else {
 
-            `<span class="spawned">
+  const h =
+    Math.floor(
 
-              まもなく出現！
+      remainMs
 
-            </span>`;
-        }
+      /
 
-        else if (
-          remainMs <= 0
-        ) {
+      (1000 * 60 * 60)
+    );
 
-          remainText =
+  const m =
+    Math.floor(
 
-            `<span class="spawned">
+      (
 
-              出現中！
+        remainMs
 
-            </span>`;
-        }
+        %
 
-        else {
+        (
+          1000
+          * 60
+          * 60
+        )
 
-          const h =
-            Math.floor(
+      )
 
-              remainMs
+      /
 
-              /
+      (
+        1000
+        * 60
+      )
+    );
 
-              (1000 * 60 * 60)
-            );
+  const s =
+    Math.floor(
 
-          const m =
-            Math.floor(
+      (
 
-              (
+        remainMs
 
-                remainMs
+        %
 
-                %
+        (
+          1000
+          * 60
+        )
 
-                (
-                  1000
-                  * 60
-                  * 60
-                )
+      )
 
-              )
+      /
 
-              /
+      1000
+    );
 
-              (
-                1000
-                * 60
-              )
-            );
+  // 5分以下で赤文字
 
-          const s =
-            Math.floor(
+  const fiveMin =
+    5 * 60 * 1000;
 
-              (
+  const remainClass =
 
-                remainMs
+    remainMs <= fiveMin
 
-                %
+    ? "spawned"
 
-                (
-                  1000
-                  * 60
-                )
+    : "remain";
 
-              )
+  remainText =
 
-              /
+    `<span class="${remainClass}">
 
-              1000
-            );
+      あと
 
-          remainText =
+      ${h}時間
 
-            `<span class="remain">
+      ${m}分
 
-              あと
+      ${s}秒
 
-              ${h}時間
-
-              ${m}分
-
-              ${s}秒
-
-            </span>`;
-        }
+    </span>`;
+}
 
         const timeDiv =
           document.getElementById(
