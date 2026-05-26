@@ -862,7 +862,8 @@ async function resetSpots() {
           {
 
             time:
-              input
+                new Date(input)
+                .toISOString()
           }
         );
       }
